@@ -1,0 +1,44 @@
+! Cisco-User: IPsec site-to-site con el FortiGate (peer 200.8.46.133) y NAT
+configure terminal
+
+crypto isakmp policy 10
+ hash sha256
+ authentication pre-share
+ group 14
+crypto isakmp key CLAVE_PRECOMPARTIDA address 200.8.46.133
+
+crypto ipsec transform-set TS-VPN esp-des esp-sha256-hmac
+ mode tunnel
+
+ip access-list extended ACL-VPN
+ permit ip 10.8.46.0 0.0.0.127 10.8.46.128 0.0.0.15
+
+crypto map CMAP-VPN 10 ipsec-isakmp
+ set peer 200.8.46.133
+ set transform-set TS-VPN
+ match address ACL-VPN
+
+ip access-list extended NAT-USERS
+ deny ip 10.8.46.0 0.0.0.127 10.8.46.128 0.0.0.15
+ permit ip 10.8.46.0 0.0.0.127 any
+
+interface GigabitEthernet1/0
+ ip address 200.8.46.132 255.255.255.0
+ ip nat outside
+ crypto map CMAP-VPN
+interface FastEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 10.8.46.1 255.255.255.128
+ ip nat inside
+exit
+
+ip nat inside source list NAT-USERS interface GigabitEthernet1/0 overload
+ip route 0.0.0.0 0.0.0.0 200.8.46.2
+
+ip dhcp excluded-address 10.8.46.1 10.8.46.9
+ip dhcp pool POOL_VLAN10
+ network 10.8.46.0 255.255.255.128
+ default-router 10.8.46.1
+ dns-server 8.8.8.8
+end
+write memory

@@ -1,0 +1,6 @@
+# GNS3: clic derecho en el nodo > Edit config (persiste al reiniciar)
+auto eth0
+iface eth0 inet static
+    address 10.8.46.130
+    netmask 255.255.255.240
+    gateway 10.8.46.129
