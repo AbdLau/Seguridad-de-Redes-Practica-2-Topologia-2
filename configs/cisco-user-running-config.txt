@@ -1,0 +1,175 @@
+Cisco-User#show running-config
+Building configuration...
+
+Current configuration : 3031 bytes
+!
+! Last configuration change at 07:35:29 UTC Sat Oct 3 2026
+!
+version 15.2
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+!
+hostname Cisco-User
+!
+boot-start-marker
+boot-end-marker
+!
+!
+security passwords min-length 10
+logging buffered 16384
+enable secret 5 $1$Y00v$b2QklCFP3huQ7aCORBFeo1
+!
+no aaa new-model
+no ip source-route
+no ip icmp rate-limit unreachable
+!
+!
+!
+ip dhcp excluded-address 10.8.46.1 10.8.46.9
+!
+ip dhcp pool POOL_VLAN10
+ network 10.8.46.0 255.255.255.128
+ default-router 10.8.46.1
+ dns-server 8.8.8.8
+!
+!
+!
+no ip bootp server
+no ip domain lookup
+ip domain name lab.local
+ip cef
+login block-for 120 attempts 3 within 60
+no ipv6 cef
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+username admin privilege 15 secret 5 $1$/ubO$AXHM78IgpdOJWZocxKVMj.
+!
+!
+!
+!
+!
+ip tcp synwait-time 5
+ip ssh time-out 60
+ip ssh version 2
+!
+!
+crypto isakmp policy 10
+ hash sha256
+ authentication pre-share
+ group 14
+crypto isakmp key Cisco12345* address 200.8.46.133
+!
+!
+crypto ipsec transform-set TS-VPN esp-des esp-sha256-hmac
+ mode tunnel
+!
+!
+!
+crypto map CMAP-VPN 10 ipsec-isakmp
+ set peer 200.8.46.133
+ set transform-set TS-VPN
+ match address ACL-VPN
+!
+!
+!
+!
+!
+interface FastEthernet0/0
+ no ip address
+ speed auto
+ duplex auto
+!
+interface FastEthernet0/0.10
+ description LAN Usuarios VLAN 10
+ encapsulation dot1Q 10
+ ip address 10.8.46.1 255.255.255.128
+ no ip redirects
+ no ip proxy-arp
+ ip nat inside
+!
+interface FastEthernet0/1
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface GigabitEthernet1/0
+ description ConexiC WAN al Cloud
+ ip address 200.8.46.132 255.255.255.0
+ ip access-group ANTI_SPOOF_IN in
+ no ip redirects
+ no ip proxy-arp
+ ip nat outside
+ negotiation auto
+ crypto map CMAP-VPN
+!
+interface GigabitEthernet2/0
+ no ip address
+ shutdown
+ negotiation auto
+!
+ip nat inside source list NAT-USERS interface GigabitEthernet1/0 overload
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 0.0.0.0 0.0.0.0 200.8.46.2
+!
+ip access-list extended ACL-NAT
+ deny   ip 10.8.46.0 0.0.0.127 10.8.46.128 0.0.0.15
+ permit ip 10.8.46.0 0.0.0.127 any
+ip access-list extended ACL-VPN
+ permit ip 10.8.46.0 0.0.0.127 10.8.46.128 0.0.0.15
+ip access-list extended ANTI_SPOOF_IN
+ deny   ip 127.0.0.0 0.255.255.255 any
+ deny   ip 0.0.0.0 0.255.255.255 any
+ deny   ip 224.0.0.0 15.255.255.255 any
+ deny   ip host 200.8.46.132 any
+ permit ip any any
+ip access-list extended NAT-USERS
+ deny   ip 10.8.46.0 0.0.0.127 10.8.46.128 0.0.0.15
+ permit ip 10.8.46.0 0.0.0.127 any
+!
+access-list 10 permit 10.8.46.0 0.0.0.127
+access-list 10 deny   any log
+no cdp run
+!
+!
+!
+control-plane
+!
+banner motd ^CAcceso restringido. Solo personal autorizado.^C
+!
+line con 0
+ exec-timeout 5 0
+ privilege level 15
+ logging synchronous
+ login local
+ stopbits 1
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ no exec
+ stopbits 1
+line vty 0 4
+ access-class 10 in
+ exec-timeout 5 0
+ login local
+ transport input ssh
+!
+!
+end
+
+Cisco-User#
